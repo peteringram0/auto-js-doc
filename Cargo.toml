@@ -1,0 +1,13 @@
+[package]
+name = "auto-js-doc"
+version = "0.0.0-alpha.1"
+edition = "2021"
+
+[build-dependencies]
+cc="*"
+
+[dependencies]
+tree-sitter = "0.22"
+tree-sitter-rust = "0.21"
+tree-sitter-typescript = "0.21"
+regex = "1.10"
