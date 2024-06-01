@@ -41,7 +41,8 @@ function testNoExport(param1: string, param2?: bool) {
 ```
 
 # TODO
-* [ ] Support classes
-* [ ] Support optional defaults
-* [ ] Check exported and non exported functions
-* [ ] Static function support 
+* [ ] Parsing - Support classes
+* [ ] Parsing - Support optional defaults
+* [ ] Parsing - Check exported and non exported functions
+* [ ] Parsing - Static function support
+* [ ] CLI - Run as CLI with flags to target a .ts file (or maybe a group of files?)
