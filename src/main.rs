@@ -36,22 +36,32 @@ fn get_indentation(source_code: &str, node: &Node) -> String {
 }
 
 // todo
-fn get_params(source_code: &str, child: &Node) {
+fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
     if let Some(parameters_node) = child.child_by_field_name("parameters") {
         for param in parameters_node.named_children(&mut parameters_node.walk()) {
-            let is_required = param.kind() == "required_parameter";
-            println!("is required {}", is_required);
+            let mut param_name: Option<String> = None;
+            let mut param_type: Option<String> = None;
+            let param_required = param.kind() == "required_parameter";
 
             for child in param.named_children(&mut param.walk()) {
                 if child.kind() == "identifier" {
-                    let param_name = child.utf8_text(source_code.as_bytes()).unwrap();
-                    println!("Parameter name: {}", param_name);
+                    param_name = Some(child.utf8_text(source_code.as_bytes()).unwrap().to_owned());
                 }
                 if child.kind() == "type_annotation" {
                     if let Some(type_node) = child.named_child(0) {
-                        let param_type = type_node.utf8_text(source_code.as_bytes()).unwrap();
-                        println!("Parameter type: {}", param_type);
+                        param_type = Some(
+                            type_node
+                                .utf8_text(source_code.as_bytes())
+                                .unwrap()
+                                .to_owned(),
+                        );
                     }
+                }
+
+                if let (Some(param_name), Some(param_type)) =
+                    (param_name.as_ref(), param_type.as_ref())
+                {
+                    js_doc.add_param(param_name, param_type, !param_required, "");
                 }
             }
         }
@@ -83,9 +93,9 @@ fn walk(node: &Node, source_code: &str) -> String {
             // current lint
             let function_name_line = child.utf8_text(source_code.as_bytes()).unwrap().to_owned(); // TODO get rid of this !
 
-            get_params(source_code, &child); // TODO here
-
             js_doc.add_description(&get_function_name(&function_name_line));
+
+            get_params(source_code, &child, &mut js_doc);
 
             updated_code.push_str(&format!("{}\n", js_doc.build())); // add in the JsDoc
 
@@ -114,7 +124,7 @@ mod tests {
     #[test]
     fn test_single() {
         let source_code = r#"
-            function testNoExport(param1: string) {
+            function testNoExport(param1: string, param2?: bool) {
 
             }
         "#;
@@ -123,14 +133,16 @@ mod tests {
             /**
              * testNoExport
              *
+             * @param {string} param1 - 
+             * @param {bool} [param2] - 
              */
-            function testNoExport(param1: string) {
+            function testNoExport(param1: string, param2?: bool) {
 
             }
         "#;
 
         let updated_code = process(source_code);
-
+        // println!("{}", updated_code)
         assert_eq!(updated_code, expected_output);
     }
 
@@ -158,6 +170,7 @@ mod tests {
             /**
              * testNoExport
              *
+             * @param {string} param1 - 
              */
             function testNoExport(param1: string) {
 

@@ -25,10 +25,19 @@ impl JsDoc {
     }
 
     // Method to add a parameter to the JsDoc
-    pub fn add_param(&mut self, param: &str, param_type: &str, description: &str) -> &mut JsDoc {
+    pub fn add_param(
+        &mut self,
+        param: &str,
+        param_type: &str,
+        optional: bool,
+        description: &str,
+    ) -> &mut JsDoc {
+        let open_bracket = if optional { "[" } else { "" };
+        let close_bracket = if optional { "]" } else { "" };
+        let param_wrapped = format!("{open_bracket}{param}{close_bracket}");
         self.formatted.push_str(&format!(
             "{} * @param {{{}}} {} - {}\n",
-            self.indentation, param_type, param, description
+            self.indentation, param_type, param_wrapped, description
         ));
         self
     }
@@ -51,8 +60,8 @@ mod tests {
     fn test_builder() {
         let builder = JsDoc::new("")
             .add_description("add description")
-            .add_param("foo", "string", "foo description")
-            .add_param("bar", "string", "bar description")
+            .add_param("foo", "string", false, "foo description")
+            .add_param("bar", "string", true, "bar description")
             .add_return("string", "return of something")
             .build();
 
@@ -60,7 +69,7 @@ mod tests {
  * add description
  *
  * @param {string} foo - foo description
- * @param {string} bar - bar description
+ * @param {string} [bar] - bar description
  * @return {string} return of something
  */"#;
         assert_eq!(builder, expected_output);
