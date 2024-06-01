@@ -4,6 +4,15 @@ use regex::Regex;
 use tree_sitter::{Node, Parser};
 use tree_sitter_typescript::language_typescript;
 
+// struct JsDoc {
+//     formatted: String,
+// }
+// impl JsDoc {
+//     fn add_name(&self, name: String) -> String {
+//         "".to_owned()
+//     }
+// }
+
 fn main() {
     // TODO
 }
@@ -31,6 +40,27 @@ fn get_indentation(source_code: &str, node: &Node) -> String {
     indentation
 }
 
+fn get_params(source_code: &str, child: &Node) {
+    if let Some(parameters_node) = child.child_by_field_name("parameters") {
+        for param in parameters_node.named_children(&mut parameters_node.walk()) {
+            if param.kind() == "required_parameter" {
+                for child in param.named_children(&mut param.walk()) {
+                    if child.kind() == "identifier" {
+                        let param_name = child.utf8_text(source_code.as_bytes()).unwrap();
+                        println!("Parameter name: {}", param_name);
+                    }
+                    if child.kind() == "type_annotation" {
+                        if let Some(type_node) = child.named_child(0) {
+                            let param_type = type_node.utf8_text(source_code.as_bytes()).unwrap();
+                            println!("Parameter type: {}", param_type);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn get_function_name(line: &str) -> String {
     let re = Regex::new(r"(?:export\s+)?function\s+(\w+)").unwrap();
     let captures = re.captures(line).unwrap();
@@ -55,6 +85,9 @@ fn walk(node: &Node, source_code: &str) -> String {
 
             // grab function name from string
             let function_name = get_function_name(&function_name_line);
+
+            // TODO HERE
+            get_params(source_code, &child);
 
             // get indentation of line
             let indentation = get_indentation(source_code, &child);
@@ -92,7 +125,7 @@ mod tests {
 
             }
 
-            function testNoExport() {
+            function testNoExport(param1: string) {
 
             }
         "#;
@@ -104,7 +137,7 @@ mod tests {
             }
 
             // testNoExport
-            function testNoExport() {
+            function testNoExport(param1: string) {
 
             }
         "#;
