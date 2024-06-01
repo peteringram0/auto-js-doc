@@ -7,26 +7,27 @@ impl JsDoc {
     pub fn new(indentation: &str) -> JsDoc {
         JsDoc {
             indentation: indentation.to_owned(),
-            formatted: format!("{indentation}/**\n"),
+            formatted: "/**\n".to_string(),
         }
     }
 
     pub fn build(&mut self) -> String {
-        self.formatted.push_str(&format!("{}*/", self.indentation));
+        self.formatted.push_str(&format!("{} */", self.indentation));
         self.formatted.clone()
     }
 
     pub fn add_description(&mut self, description: &str) -> &mut JsDoc {
         self.formatted
-            .push_str(&format!("{}* {}\n", self.indentation, description));
-        self.formatted.push_str(&format!("{}*\n", self.indentation));
+            .push_str(&format!("{} * {}\n", self.indentation, description));
+        self.formatted
+            .push_str(&format!("{} *\n", self.indentation)); // TODO .. only add this if there is a param next
         self
     }
 
     // Method to add a parameter to the JsDoc
     pub fn add_param(&mut self, param: &str, param_type: &str, description: &str) -> &mut JsDoc {
         self.formatted.push_str(&format!(
-            "{}* @param {{{}}} {} - {}\n",
+            "{} * @param {{{}}} {} - {}\n",
             self.indentation, param_type, param, description
         ));
         self
@@ -35,7 +36,7 @@ impl JsDoc {
     // Method to add a return type to the JsDoc
     pub fn add_return(&mut self, return_type: &str, description: &str) -> &mut JsDoc {
         self.formatted.push_str(&format!(
-            "{}* @return {{{}}} {}\n",
+            "{} * @return {{{}}} {}\n",
             self.indentation, return_type, description
         ));
         self
@@ -56,12 +57,12 @@ mod tests {
             .build();
 
         let expected_output = r#"/**
-* add description
-*
-* @param {string} foo - foo description
-* @param {string} bar - bar description
-* @return {string} return of something
-*/"#;
+ * add description
+ *
+ * @param {string} foo - foo description
+ * @param {string} bar - bar description
+ * @return {string} return of something
+ */"#;
         assert_eq!(builder, expected_output);
     }
 }

@@ -21,19 +21,19 @@ function testNoExport(param1: string) {
 
 Output:
 ```ts
-/*
-* test
-*/
+/**
+ * test
+ */
 export function test() {
 
 }
 
-/*
-* testNoExport
-*
-* @param {string} param1
-* @returns {void}
-*/
+/**
+ * testNoExport
+ *
+ * @param {string} param1
+ * @returns {void}
+ */
 function testNoExport(param1: string) {
 
 }

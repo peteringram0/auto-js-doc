@@ -77,25 +77,17 @@ fn walk(node: &Node, source_code: &str) -> String {
         updated_code.push_str(&source_code[last_byte..child_start_byte]);
 
         if child.kind() == "export_statement" || child.kind() == "function_declaration" {
-            // get indentation of line
             let indentation = get_indentation(source_code, &child);
-
             let mut js_doc = JsDoc::new(&indentation);
 
             // current lint
-            let function_name_line = child.utf8_text(source_code.as_bytes()).unwrap().to_owned();
+            let function_name_line = child.utf8_text(source_code.as_bytes()).unwrap().to_owned(); // TODO get rid of this !
 
-            // grab function name from string
-            let function_name = get_function_name(&function_name_line);
+            get_params(source_code, &child); // TODO here
 
-            js_doc.add_description(&function_name);
+            js_doc.add_description(&get_function_name(&function_name_line));
 
-            // TODO HERE
-            get_params(source_code, &child);
-
-            // formatted comment to prepend
-            let comment_str = format!("// {}\n", function_name);
-            updated_code.push_str(&comment_str);
+            updated_code.push_str(&format!("{}\n", js_doc.build())); // add in the JsDoc
 
             // add the node
             let node = child.utf8_text(source_code.as_bytes()).unwrap();
@@ -120,6 +112,29 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_single() {
+        let source_code = r#"
+            function testNoExport(param1: string) {
+
+            }
+        "#;
+
+        let expected_output = r#"
+            /**
+             * testNoExport
+             *
+             */
+            function testNoExport(param1: string) {
+
+            }
+        "#;
+
+        let updated_code = process(source_code);
+
+        assert_eq!(updated_code, expected_output);
+    }
+
+    #[test]
     fn test_no_comments() {
         let source_code = r#"
             export function test() {
@@ -132,12 +147,18 @@ mod tests {
         "#;
 
         let expected_output = r#"
-            // test
+            /**
+             * test
+             *
+             */
             export function test() {
 
             }
 
-            // testNoExport
+            /**
+             * testNoExport
+             *
+             */
             function testNoExport(param1: string) {
 
             }
