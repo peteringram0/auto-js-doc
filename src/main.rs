@@ -1,22 +1,16 @@
 #![allow(dead_code)]
 
+mod structs;
+
 use regex::Regex;
 use tree_sitter::{Node, Parser};
 use tree_sitter_typescript::language_typescript;
-
-// struct JsDoc {
-//     formatted: String,
-// }
-// impl JsDoc {
-//     fn add_name(&self, name: String) -> String {
-//         "".to_owned()
-//     }
-// }
 
 fn main() {
     // TODO
 }
 
+// process
 fn process(source_code: &str) -> String {
     let mut parser = Parser::new();
     parser
@@ -40,6 +34,7 @@ fn get_indentation(source_code: &str, node: &Node) -> String {
     indentation
 }
 
+// todo
 fn get_params(source_code: &str, child: &Node) {
     if let Some(parameters_node) = child.child_by_field_name("parameters") {
         for param in parameters_node.named_children(&mut parameters_node.walk()) {
