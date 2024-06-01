@@ -147,6 +147,34 @@ mod tests {
     }
 
     #[test]
+    fn test_class() {
+        // TODO
+        let source_code = r#"
+            class A {
+                testNoExport(param1: string, param2?: bool) {
+                    // TODO
+                }
+            }
+        "#;
+
+        // let expected_output = r#"
+        //     /**
+        //      * testNoExport
+        //      *
+        //      * @param {string} param1 -
+        //      * @param {bool} [param2] -
+        //      */
+        //     function testNoExport(param1: string, param2?: bool) {
+
+        //     }
+        // "#;
+
+        let updated_code = process(source_code);
+        println!("{}", updated_code)
+        // assert_eq!(updated_code, expected_output);
+    }
+
+    #[test]
     fn test_no_comments() {
         let source_code = r#"
             export function test() {

@@ -12,7 +12,7 @@ export function test() {
 
 }
 
-function testNoExport(param1: string) {
+function testNoExport(param1: string, param2?: bool) {
 
 }
 ```
@@ -21,7 +21,7 @@ function testNoExport(param1: string) {
 
 Output:
 ```ts
-/**
+/*
  * test
  */
 export function test() {
@@ -31,10 +31,17 @@ export function test() {
 /**
  * testNoExport
  *
- * @param {string} param1
+ * @param {string} param1 - 
+ * @param {bool} [param2] - 
  * @returns {void}
  */
-function testNoExport(param1: string) {
+function testNoExport(param1: string, param2?: bool) {
 
 }
 ```
+
+# TODO
+* [ ] Support classes
+* [ ] Support optional defaults
+* [ ] Check exported and non exported functions
+* [ ] Static function support 
