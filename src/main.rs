@@ -3,6 +3,7 @@
 mod structs;
 
 use regex::Regex;
+use structs::JsDoc;
 use tree_sitter::{Node, Parser};
 use tree_sitter_typescript::language_typescript;
 
@@ -38,17 +39,18 @@ fn get_indentation(source_code: &str, node: &Node) -> String {
 fn get_params(source_code: &str, child: &Node) {
     if let Some(parameters_node) = child.child_by_field_name("parameters") {
         for param in parameters_node.named_children(&mut parameters_node.walk()) {
-            if param.kind() == "required_parameter" {
-                for child in param.named_children(&mut param.walk()) {
-                    if child.kind() == "identifier" {
-                        let param_name = child.utf8_text(source_code.as_bytes()).unwrap();
-                        println!("Parameter name: {}", param_name);
-                    }
-                    if child.kind() == "type_annotation" {
-                        if let Some(type_node) = child.named_child(0) {
-                            let param_type = type_node.utf8_text(source_code.as_bytes()).unwrap();
-                            println!("Parameter type: {}", param_type);
-                        }
+            let is_required = param.kind() == "required_parameter";
+            println!("is required {}", is_required);
+
+            for child in param.named_children(&mut param.walk()) {
+                if child.kind() == "identifier" {
+                    let param_name = child.utf8_text(source_code.as_bytes()).unwrap();
+                    println!("Parameter name: {}", param_name);
+                }
+                if child.kind() == "type_annotation" {
+                    if let Some(type_node) = child.named_child(0) {
+                        let param_type = type_node.utf8_text(source_code.as_bytes()).unwrap();
+                        println!("Parameter type: {}", param_type);
                     }
                 }
             }
@@ -75,17 +77,21 @@ fn walk(node: &Node, source_code: &str) -> String {
         updated_code.push_str(&source_code[last_byte..child_start_byte]);
 
         if child.kind() == "export_statement" || child.kind() == "function_declaration" {
+            // get indentation of line
+            let indentation = get_indentation(source_code, &child);
+
+            let mut js_doc = JsDoc::new(&indentation);
+
             // current lint
             let function_name_line = child.utf8_text(source_code.as_bytes()).unwrap().to_owned();
 
             // grab function name from string
             let function_name = get_function_name(&function_name_line);
 
+            js_doc.add_description(&function_name);
+
             // TODO HERE
             get_params(source_code, &child);
-
-            // get indentation of line
-            let indentation = get_indentation(source_code, &child);
 
             // formatted comment to prepend
             let comment_str = format!("// {}\n", function_name);
