@@ -16,7 +16,6 @@ name = "auto-js-doc"
 version = "0.0.0-alpha.1"
 dependencies = [
  "cc",
- "regex",
  "tree-sitter",
  "tree-sitter-rust",
  "tree-sitter-typescript",

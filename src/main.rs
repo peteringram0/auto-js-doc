@@ -2,7 +2,6 @@
 
 mod structs;
 
-use regex::Regex;
 use structs::JsDoc;
 use tree_sitter::{Node, Parser};
 use tree_sitter_typescript::language_typescript;
@@ -68,12 +67,6 @@ fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
     }
 }
 
-fn get_function_name(line: &str) -> String {
-    let re = Regex::new(r"(?:export\s+)?function\s+(\w+)").unwrap();
-    let captures = re.captures(line).unwrap();
-    captures.get(1).unwrap().as_str().to_owned()
-}
-
 fn walk(node: &Node, source_code: &str) -> String {
     let mut cursor = node.walk();
     let mut updated_code = String::new();
@@ -87,23 +80,10 @@ fn walk(node: &Node, source_code: &str) -> String {
         updated_code.push_str(&source_code[last_byte..child_start_byte]);
 
         if child.kind() == "export_statement" || child.kind() == "function_declaration" {
-            let indentation = get_indentation(source_code, &child);
-            let mut js_doc = JsDoc::new(&indentation);
-
-            // current lint
-            let function_name_line = child.utf8_text(source_code.as_bytes()).unwrap().to_owned(); // TODO get rid of this !
-
-            js_doc.add_description(&get_function_name(&function_name_line));
-
-            get_params(source_code, &child, &mut js_doc);
-
-            updated_code.push_str(&format!("{}\n", js_doc.build())); // add in the JsDoc
-
-            // add the node
-            let node = child.utf8_text(source_code.as_bytes()).unwrap();
-            updated_code.push_str(&format!("{}{}", indentation, node));
+            process_functions(source_code, &child, &mut updated_code);
+        } else if child.kind() == "class_declaration" {
+            process_class_declaration(source_code, &child, &mut updated_code);
         } else {
-            // Append the text of the current child node
             updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
         }
 
@@ -115,6 +95,55 @@ fn walk(node: &Node, source_code: &str) -> String {
     updated_code.push_str(&source_code[last_byte..]);
 
     updated_code
+}
+
+fn process_class_declaration(source_code: &str, node: &Node, updated_code: &mut String) {
+    let mut inner_cursor = node.walk();
+    for child in node.children(&mut inner_cursor) {
+        if child.kind() == "class_body" {
+            process_class_body(source_code, &child, updated_code);
+        } else {
+            updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
+        }
+    }
+}
+
+fn process_class_body(source_code: &str, node: &Node, updated_code: &mut String) {
+    let mut body_cursor = node.walk();
+    for child in node.children(&mut body_cursor) {
+        if child.kind() == "method_definition" {
+            process_functions(source_code, &child, updated_code);
+        } else if child.kind() == "class_declaration" {
+            process_class_declaration(source_code, &child, updated_code);
+        } else {
+            updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
+        }
+    }
+}
+
+fn process_functions(source_code: &str, node: &Node, updated_code: &mut String) {
+    let indentation = get_indentation(source_code, node);
+    let mut js_doc = JsDoc::new(&indentation);
+
+    js_doc.add_description(&get_function_name_from_node(source_code, node));
+
+    get_params(source_code, node, &mut js_doc);
+
+    updated_code.push_str(&format!("{}\n", js_doc.build())); // add in the JsDoc
+
+    // add the node
+    let node = node.utf8_text(source_code.as_bytes()).unwrap();
+    updated_code.push_str(&format!("{}{}", indentation, node));
+}
+
+fn get_function_name_from_node(source_code: &str, node: &Node) -> String {
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if child.kind() == "property_identifier" || child.kind() == "identifier" {
+            return child.utf8_text(source_code.as_bytes()).unwrap().to_string();
+        }
+    }
+    "unknown".to_string()
 }
 
 #[cfg(test)]
@@ -154,6 +183,10 @@ mod tests {
                 testNoExport(param1: string, param2?: bool) {
                     // TODO
                 }
+
+                aa() {
+                    // TODO
+                }
             }
         "#;
 
@@ -170,7 +203,7 @@ mod tests {
         // "#;
 
         let updated_code = process(source_code);
-        println!("{}", updated_code)
+        println!("updated: {}", updated_code)
         // assert_eq!(updated_code, expected_output);
     }
 
