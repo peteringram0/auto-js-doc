@@ -167,7 +167,23 @@ fn get_function_name_from_node(source_code: &str, node: &Node) -> String {
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         if child.kind() == "property_identifier" || child.kind() == "identifier" {
-            return child.utf8_text(source_code.as_bytes()).unwrap().to_string();
+            return child
+                .utf8_text(source_code.as_bytes())
+                .unwrap()
+                .to_string()
+                .trim()
+                .to_string();
+        } else if child.kind() == "function_declaration" {
+            let mut export_cursor = child.walk();
+            for export_child in child.children(&mut export_cursor) {
+                if export_child.kind() == "identifier" {
+                    return export_child
+                        .utf8_text(source_code.as_bytes())
+                        .unwrap()
+                        .trim()
+                        .to_string();
+                }
+            }
         }
     }
     "unknown".to_string()
@@ -185,7 +201,7 @@ mod tests {
             }
             
             export function testExport() {
-
+            
             }
         "#;
 
@@ -199,17 +215,17 @@ mod tests {
             function testNoExport(param1: string, param2?: bool) {
 
             }
-
+            
             /**
              * testExport
              */
             export function testExport() {
-
+            
             }
         "#;
 
         let updated_code = process(source_code);
-        println!("{}", updated_code);
+        // println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 
