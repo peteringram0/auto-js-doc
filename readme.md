@@ -43,6 +43,7 @@ function testNoExport(param1: string, param2?: bool) {
 # TODO
 * [X] Parsing - Support classes
 * [ ] Parsing - Support optional defaults
+* [X] Parsing - private functions
 * [X] Parsing - Check exported and non exported functions
 * [ ] Parsing - Add in @returns
 * [ ] Parsing - Static function support

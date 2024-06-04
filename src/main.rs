@@ -237,7 +237,11 @@ mod tests {
                     // TODO
                 }
 
-                aa() {
+                public aa() {
+                    // TODO
+                }
+
+                private b() {
                     // TODO
                 }
             }
@@ -258,13 +262,21 @@ mod tests {
                 /**
                  * aa
                  */
-                aa() {
+                public aa() {
+                    // TODO
+                }
+
+                /**
+                 * b
+                 */
+                private b() {
                     // TODO
                 }
             }
         "#;
 
         let updated_code = process(source_code);
+        // println!("a {}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 }
