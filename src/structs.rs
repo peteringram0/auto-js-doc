@@ -19,8 +19,12 @@ impl JsDoc {
     pub fn add_description(&mut self, description: &str) -> &mut JsDoc {
         self.formatted
             .push_str(&format!("{} * {}\n", self.indentation, description));
+        self
+    }
+
+    pub fn add_space(&mut self) -> &mut JsDoc {
         self.formatted
-            .push_str(&format!("{} *\n", self.indentation)); // TODO .. only add this if there is a param next
+            .push_str(&format!("{} *\n", self.indentation));
         self
     }
 
@@ -60,6 +64,7 @@ mod tests {
     fn test_builder() {
         let builder = JsDoc::new("")
             .add_description("add description")
+            .add_space()
             .add_param("foo", "string", false, "foo description")
             .add_param("bar", "string", true, "bar description")
             .add_return("string", "return of something")
@@ -72,6 +77,7 @@ mod tests {
  * @param {string} [bar] - bar description
  * @return {string} return of something
  */"#;
+
         assert_eq!(builder, expected_output);
     }
 }

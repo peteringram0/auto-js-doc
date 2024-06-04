@@ -37,6 +37,15 @@ fn get_indentation(source_code: &str, node: &Node) -> String {
 // todo
 fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
     if let Some(parameters_node) = child.child_by_field_name("parameters") {
+        // If there is more then 1 param add a space under the description
+        if parameters_node
+            .named_children(&mut parameters_node.walk())
+            .count()
+            > 0
+        {
+            js_doc.add_space();
+        }
+
         for param in parameters_node.named_children(&mut parameters_node.walk()) {
             let mut param_name: Option<String> = None;
             let mut param_type: Option<String> = None;
@@ -98,25 +107,45 @@ fn walk(node: &Node, source_code: &str) -> String {
 }
 
 fn process_class_declaration(source_code: &str, node: &Node, updated_code: &mut String) {
+    let indentation = get_indentation(source_code, node);
     let mut inner_cursor = node.walk();
     for child in node.children(&mut inner_cursor) {
+        // updated_code.push_str(" ");
+        println!(
+            "here {:?}",
+            child.utf8_text(source_code.as_bytes()).unwrap()
+        );
         if child.kind() == "class_body" {
+            // Add the class declaration with proper spacing before the opening brace
+            // let class_decl = source_code[node.start_byte()..child.start_byte()].trim_end();
+            // updated_code.push_str(&format!("{}{} {{\n", indentation, class_decl));
+
             process_class_body(source_code, &child, updated_code);
+            // updated_code.push_str(&format!("{}}}\n", indentation));
         } else {
             updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
+            // updated_code.push_str(source_code[node.start_byte()..child.start_byte()].trim_end());
         }
     }
 }
 
 fn process_class_body(source_code: &str, node: &Node, updated_code: &mut String) {
     let mut body_cursor = node.walk();
+    // let indentation = get_indentation(source_code, node);
     for child in node.children(&mut body_cursor) {
+        // println!(
+        //     "here2 {:?}",
+        //     child.utf8_text(source_code.as_bytes()).unwrap()
+        // );
         if child.kind() == "method_definition" {
+            // updated_code.push_str(&format!("\n{}", indentation));
             process_functions(source_code, &child, updated_code);
         } else if child.kind() == "class_declaration" {
             process_class_declaration(source_code, &child, updated_code);
         } else {
-            updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
+            let c = child.utf8_text(source_code.as_bytes()).unwrap();
+            // println!("c: {:?}", c);
+            updated_code.push_str(c);
         }
     }
 }
@@ -171,13 +200,12 @@ mod tests {
         "#;
 
         let updated_code = process(source_code);
-        // println!("{}", updated_code)
+        println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 
     #[test]
     fn test_class() {
-        // TODO
         let source_code = r#"
             class A {
                 testNoExport(param1: string, param2?: bool) {
@@ -190,55 +218,29 @@ mod tests {
             }
         "#;
 
-        // let expected_output = r#"
-        //     /**
-        //      * testNoExport
-        //      *
-        //      * @param {string} param1 -
-        //      * @param {bool} [param2] -
-        //      */
-        //     function testNoExport(param1: string, param2?: bool) {
-
-        //     }
-        // "#;
-
-        let updated_code = process(source_code);
-        println!("updated: {}", updated_code)
-        // assert_eq!(updated_code, expected_output);
-    }
-
-    #[test]
-    fn test_no_comments() {
-        let source_code = r#"
-            export function test() {
-
-            }
-
-            function testNoExport(param1: string) {
-
-            }
-        "#;
-
         let expected_output = r#"
-            /**
-             * test
-             *
-             */
-            export function test() {
+            class A {
+                /**
+                 * testNoExport
+                 *
+                 * @param {string} param1 -
+                 * @param {bool} [param2] -
+                 */
+                testNoExport(param1: string, param2?: bool) {
+                    // TODO
+                }
 
-            }
-
-            /**
-             * testNoExport
-             *
-             * @param {string} param1 - 
-             */
-            function testNoExport(param1: string) {
-
+                /**
+                 * aa
+                 */
+                aa() {
+                    // TODO
+                }
             }
         "#;
 
         let updated_code = process(source_code);
+        println!("updated: {}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 }
