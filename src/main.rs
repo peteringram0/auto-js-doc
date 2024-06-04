@@ -107,47 +107,45 @@ fn walk(node: &Node, source_code: &str) -> String {
 }
 
 fn process_class_declaration(source_code: &str, node: &Node, updated_code: &mut String) {
-    let indentation = get_indentation(source_code, node);
     let mut inner_cursor = node.walk();
-    for child in node.children(&mut inner_cursor) {
-        // updated_code.push_str(" ");
-        println!(
-            "here {:?}",
-            child.utf8_text(source_code.as_bytes()).unwrap()
-        );
-        if child.kind() == "class_body" {
-            // Add the class declaration with proper spacing before the opening brace
-            // let class_decl = source_code[node.start_byte()..child.start_byte()].trim_end();
-            // updated_code.push_str(&format!("{}{} {{\n", indentation, class_decl));
+    let start_byte = node.start_byte();
+    let mut last_byte = start_byte;
 
+    for child in node.children(&mut inner_cursor) {
+        let child_start_byte = child.start_byte();
+        updated_code.push_str(&source_code[last_byte..child_start_byte]);
+
+        if child.kind() == "class_body" {
             process_class_body(source_code, &child, updated_code);
-            // updated_code.push_str(&format!("{}}}\n", indentation));
         } else {
             updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
-            // updated_code.push_str(source_code[node.start_byte()..child.start_byte()].trim_end());
         }
+
+        last_byte = child.end_byte();
     }
+    updated_code.push_str(&source_code[last_byte..node.end_byte()]);
 }
 
 fn process_class_body(source_code: &str, node: &Node, updated_code: &mut String) {
     let mut body_cursor = node.walk();
-    // let indentation = get_indentation(source_code, node);
+    let start_byte = node.start_byte();
+    let mut last_byte = start_byte;
+
     for child in node.children(&mut body_cursor) {
-        // println!(
-        //     "here2 {:?}",
-        //     child.utf8_text(source_code.as_bytes()).unwrap()
-        // );
+        let child_start_byte = child.start_byte();
+        updated_code.push_str(&source_code[last_byte..child_start_byte]);
+
         if child.kind() == "method_definition" {
-            // updated_code.push_str(&format!("\n{}", indentation));
             process_functions(source_code, &child, updated_code);
         } else if child.kind() == "class_declaration" {
             process_class_declaration(source_code, &child, updated_code);
         } else {
-            let c = child.utf8_text(source_code.as_bytes()).unwrap();
-            // println!("c: {:?}", c);
-            updated_code.push_str(c);
+            updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
         }
+
+        last_byte = child.end_byte();
     }
+    updated_code.push_str(&source_code[last_byte..node.end_byte()]);
 }
 
 fn process_functions(source_code: &str, node: &Node, updated_code: &mut String) {
@@ -200,7 +198,6 @@ mod tests {
         "#;
 
         let updated_code = process(source_code);
-        println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 
@@ -223,8 +220,8 @@ mod tests {
                 /**
                  * testNoExport
                  *
-                 * @param {string} param1 -
-                 * @param {bool} [param2] -
+                 * @param {string} param1 - 
+                 * @param {bool} [param2] - 
                  */
                 testNoExport(param1: string, param2?: bool) {
                     // TODO
@@ -240,7 +237,6 @@ mod tests {
         "#;
 
         let updated_code = process(source_code);
-        println!("updated: {}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 }
