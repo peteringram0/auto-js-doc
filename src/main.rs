@@ -178,9 +178,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_single() {
+    fn test_basic() {
         let source_code = r#"
             function testNoExport(param1: string, param2?: bool) {
+
+            }
+            
+            export function testExport() {
 
             }
         "#;
@@ -195,9 +199,17 @@ mod tests {
             function testNoExport(param1: string, param2?: bool) {
 
             }
+
+            /**
+             * testExport
+             */
+            export function testExport() {
+
+            }
         "#;
 
         let updated_code = process(source_code);
+        println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 
