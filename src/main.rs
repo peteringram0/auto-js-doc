@@ -2,6 +2,8 @@
 
 mod structs;
 
+use std::char;
+
 use structs::JsDoc;
 use tree_sitter::{Node, Parser};
 use tree_sitter_typescript::language_typescript;
@@ -36,6 +38,18 @@ fn get_indentation(source_code: &str, node: &Node) -> String {
 
 // todo
 fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
+    // if child.kind() == "export_statement" {
+    //     println!(
+    //         "here {:?}",
+    //         child
+    //             .child(0)
+    //             .unwrap()
+    //             .next_named_sibling()
+    //             .unwrap()
+    //             .child_by_field_name("parameters")
+    //     ); // TODO reports as none for exported !!
+    // }
+
     if let Some(parameters_node) = child.child_by_field_name("parameters") {
         // If there is more then 1 param add a space under the description
         if parameters_node
@@ -49,9 +63,11 @@ fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
         for param in parameters_node.named_children(&mut parameters_node.walk()) {
             let mut param_name: Option<String> = None;
             let mut param_type: Option<String> = None;
+            let mut param_default: Option<String> = None;
             let param_required = param.kind() == "required_parameter";
 
             for child in param.named_children(&mut param.walk()) {
+                println!("here {}", child.kind());
                 if child.kind() == "identifier" {
                     param_name = Some(child.utf8_text(source_code.as_bytes()).unwrap().to_owned());
                 }
@@ -66,11 +82,34 @@ fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
                     }
                 }
 
-                if let (Some(param_name), Some(param_type)) =
-                    (param_name.as_ref(), param_type.as_ref())
-                {
-                    js_doc.add_param(param_name, param_type, !param_required, "");
+                // Get any default value assigned
+                if child.kind() == "string" {
+                    param_default = Some(
+                        child
+                            .utf8_text(source_code.as_bytes())
+                            .unwrap()
+                            .to_owned()
+                            .to_owned()
+                            .trim_matches('"')
+                            .to_owned(),
+                    );
                 }
+            }
+
+            println!(
+                "name: {:?}, type: {:?}, default: {:?}",
+                param_name, param_type, param_default
+            );
+
+            if let (Some(param_name), Some(param_type)) = (param_name.as_ref(), param_type.as_ref())
+            {
+                js_doc.add_param(
+                    param_name,
+                    param_type,
+                    !param_required,
+                    param_default.clone(),
+                    "",
+                );
             }
         }
     }
@@ -154,7 +193,12 @@ fn process_functions(source_code: &str, node: &Node, updated_code: &mut String) 
 
     js_doc.add_description(&get_function_name_from_node(source_code, node));
 
-    get_params(source_code, node, &mut js_doc);
+    if node.kind() == "export_statement" {
+        let params = node.child(0).unwrap().next_named_sibling().unwrap();
+        get_params(source_code, &params, &mut js_doc);
+    } else {
+        get_params(source_code, node, &mut js_doc);
+    }
 
     updated_code.push_str(&format!("{}\n", js_doc.build())); // add in the JsDoc
 
@@ -196,11 +240,11 @@ mod tests {
     #[test]
     fn test_basic() {
         let source_code = r#"
-            function testNoExport(param1: string, param2?: bool) {
+            function testNoExport(param1: string, param2?: boolean) {
 
             }
             
-            export function testExport() {
+            export function testExport(param1: string) {
             
             }
         "#;
@@ -212,22 +256,99 @@ mod tests {
              * @param {string} param1 - 
              * @param {bool} [param2] - 
              */
-            function testNoExport(param1: string, param2?: bool) {
+            function testNoExport(param1: string, param2?: boolean) {
 
             }
             
             /**
              * testExport
+             *
+             * @param {string} param1 - 
              */
-            export function testExport() {
+            export function testExport(param1: string) {
             
             }
         "#;
 
         let updated_code = process(source_code);
-        // println!("{}", updated_code);
+        println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
+
+    #[test]
+    fn test_exported() {
+        let source_code = r#"
+            export function testExport(param1: string) {
+            
+            }
+        "#;
+
+        let expected_output = r#"
+            /**
+             * testExport
+             *
+             * @param {string} param1 - 
+             */
+            export function testExport(param1: string) {
+            
+            }
+        "#;
+
+        let updated_code = process(source_code);
+        println!("{}", updated_code);
+        assert_eq!(updated_code, expected_output);
+    }
+
+    #[test]
+    fn test_defaults() {
+        let source_code = r#"
+            export function test(param1: string = "default value") {
+            
+            }
+        "#;
+
+        // TODO .. what should this actually look like according to jsdoc
+        let expected_output = r#"
+            /**
+             * test
+             *
+             * @param {string} param1="default value" - 
+             */
+            export function test(param1: string = "default value") {
+            
+            }
+        "#;
+
+        let updated_code = process(source_code);
+        println!("{}", updated_code);
+        assert_eq!(updated_code, expected_output);
+    }
+
+    // TODO .. WIP ... i think i need to move to a query to get this
+    // #[test]
+    // fn test_defaults_with_no_type() {
+    //     let source_code = r#"
+    //         export function test(param2 = true) {
+
+    //         }
+    //     "#;
+
+    //     // TODO .. what should this actually look like according to jsdoc
+    //     let expected_output = r#"
+    //         /**
+    //          * test
+    //          *
+    //          * @param {bool} param2 -
+    //          */
+    //         export function test(param2 = true) {
+
+    //         }
+    //     "#;
+
+    //     let updated_code = process(source_code);
+    //     println!("{}", updated_code);
+    //     assert_eq!(updated_code, expected_output);
+    // }
 
     #[test]
     fn test_class() {
@@ -244,6 +365,10 @@ mod tests {
                 private b() {
                     // TODO
                 }
+
+                static c() {
+                    // TODO
+                }
             }
         "#;
 
@@ -253,9 +378,9 @@ mod tests {
                  * testNoExport
                  *
                  * @param {string} param1 - 
-                 * @param {bool} [param2] - 
+                 * @param {boolean} [param2] - 
                  */
-                testNoExport(param1: string, param2?: bool) {
+                testNoExport(param1: string, param2?: boolean) {
                     // TODO
                 }
 
@@ -272,11 +397,18 @@ mod tests {
                 private b() {
                     // TODO
                 }
+
+                /**
+                 * c
+                 */
+                static c() {
+                    // TODO
+                }
             }
         "#;
 
         let updated_code = process(source_code);
-        // println!("a {}", updated_code);
+        println!("a {}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 }

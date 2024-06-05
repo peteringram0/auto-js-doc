@@ -34,14 +34,19 @@ impl JsDoc {
         param: &str,
         param_type: &str,
         optional: bool,
+        default: Option<String>,
         description: &str,
     ) -> &mut JsDoc {
+        // * @param {string} [param1="default value"] -
         let open_bracket = if optional { "[" } else { "" };
         let close_bracket = if optional { "]" } else { "" };
-        let param_wrapped = format!("{open_bracket}{param}{close_bracket}");
+        let a = default
+            .map(|val| format!("{open_bracket}{param}=\"{val}\"{close_bracket}"))
+            .unwrap_or(format!("{open_bracket}{param}{close_bracket}"));
+        // let param_wrapped = format!("{open_bracket}{param}{close_bracket}");
         self.formatted.push_str(&format!(
             "{} * @param {{{}}} {} - {}\n",
-            self.indentation, param_type, param_wrapped, description
+            self.indentation, param_type, a, description
         ));
         self
     }
@@ -65,8 +70,15 @@ mod tests {
         let builder = JsDoc::new("")
             .add_description("add description")
             .add_space()
-            .add_param("foo", "string", false, "foo description")
-            .add_param("bar", "string", true, "bar description")
+            .add_param("foo", "string", false, None, "foo description")
+            .add_param("bar", "string", true, None, "bar description")
+            .add_param(
+                "bar",
+                "string",
+                true,
+                Some("default value".to_owned()),
+                "bar description",
+            )
             .add_return("string", "return of something")
             .build();
 
@@ -75,9 +87,11 @@ mod tests {
  *
  * @param {string} foo - foo description
  * @param {string} [bar] - bar description
+ * @param {string} [bar="default value"] - bar description
  * @return {string} return of something
  */"#;
 
+        // println!("a {}", expected_output);
         assert_eq!(builder, expected_output);
     }
 }

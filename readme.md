@@ -8,43 +8,37 @@ This project aims to add [JsDoc](https://jsdoc.app/) blocks to functions and eve
 
 Input:
 ```ts
-export function test() {
-
-}
-
-function testNoExport(param1: string, param2?: bool) {
+function myFunction(param1: string, param2?: boolean, param3 = "default value") {
 
 }
 ```
 
-#
-
 Output:
 ```ts
-/*
- * test
- */
-export function test() {
-
-}
-
 /**
- * testNoExport
+ * myFunction
  *
  * @param {string} param1 - 
- * @param {bool} [param2] - 
+ * @param {boolean} [param2] - 
+ * @param {string} [param3="default value"] - 
  * @returns {void}
  */
-function testNoExport(param1: string, param2?: bool) {
+function myFunction(param1: string, param2?: boolean, param3 = "default value") {
 
 }
 ```
 
 # TODO
 * [X] Parsing - Support classes
-* [ ] Parsing - Support optional defaults
+* [X] Parsing - Support optional defaults
 * [X] Parsing - private functions
 * [X] Parsing - Check exported and non exported functions
+* [X] Parsing - Static function support
 * [ ] Parsing - Add in @returns
-* [ ] Parsing - Static function support
+* [ ] Parsing - Support parmas without typing info
+* [ ] Parsing - Support default values without typing information
+* [ ] Parsing - Should ignore constructor with `private a: string` as part of the arguments (need to check this)
 * [ ] CLI - Run as CLI with flags to target a .ts file (or maybe a group of files?)
+
+# Know issues
+* [X] exported function not working with params
