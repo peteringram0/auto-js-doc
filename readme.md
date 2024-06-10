@@ -8,7 +8,7 @@ This project aims to add [JsDoc](https://jsdoc.app/) blocks to functions and eve
 
 Input:
 ```ts
-function myFunction(param1: string, param2?: boolean, param3 = "default value") {
+function myFunction(param1: string, param2?: boolean, param3 = "default value"): Promise<string> {
 
 }
 ```
@@ -21,9 +21,9 @@ Output:
  * @param {string} param1 - 
  * @param {boolean} [param2] - 
  * @param {string} [param3="default value"] - 
- * @returns {void}
+ * @returns {Promise<string>}
  */
-function myFunction(param1: string, param2?: boolean, param3 = "default value") {
+function myFunction(param1: string, param2?: boolean, param3 = "default value"): Promise<string> {
 
 }
 ```
@@ -34,11 +34,12 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value") 
 * [X] Parsing - private functions
 * [X] Parsing - Check exported and non exported functions
 * [X] Parsing - Static function support
+* [X] Parsing - Should ignore constructor with `private a: string` as part of the arguments (need to check this)
+* [X] Parsing - Support union type
 * [ ] Parsing - Add in @returns
-* [ ] Parsing - Support parmas without typing info
-* [ ] Parsing - Support default values without typing information
-* [ ] Parsing - Should ignore constructor with `private a: string` as part of the arguments (need to check this)
-* [ ] CLI - Run as CLI with flags to target a .ts file (or maybe a group of files?)
+* [ ] Building - Export to WASM
 
-# Know issues
-* [X] exported function not working with params
+# Later
+* [ ] Parsing - Support parmas with inferred typing
+* [ ] Parsing - Support parmas with inferred typing - with default values provided
+* [ ] CLI - Run as CLI with flags to target a .ts file (or maybe a group of files?)

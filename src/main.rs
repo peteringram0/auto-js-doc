@@ -1,12 +1,25 @@
 #![allow(dead_code)]
 
+mod e2e_test;
 mod structs;
-
-use std::char;
 
 use structs::JsDoc;
 use tree_sitter::{Node, Parser};
 use tree_sitter_typescript::language_typescript;
+
+#[derive(Debug, Default)]
+struct FunctionInfo {
+    function_name: String,
+    return_type: Option<String>,
+}
+impl FunctionInfo {
+    fn new(function_name: String, return_type: Option<String>) -> FunctionInfo {
+        FunctionInfo {
+            function_name,
+            return_type,
+        }
+    }
+}
 
 fn main() {
     // TODO
@@ -67,7 +80,7 @@ fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
             let param_required = param.kind() == "required_parameter";
 
             for child in param.named_children(&mut param.walk()) {
-                println!("here {}", child.kind());
+                // println!("here {}", child.kind());
                 if child.kind() == "identifier" {
                     param_name = Some(child.utf8_text(source_code.as_bytes()).unwrap().to_owned());
                 }
@@ -101,8 +114,7 @@ fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
                 param_name, param_type, param_default
             );
 
-            if let (Some(param_name), Some(param_type)) = (param_name.as_ref(), param_type.as_ref())
-            {
+            if let (Some(param_name), param_type) = (param_name.as_ref(), param_type.clone()) {
                 js_doc.add_param(
                     param_name,
                     param_type,
@@ -154,6 +166,8 @@ fn process_class_declaration(source_code: &str, node: &Node, updated_code: &mut 
         let child_start_byte = child.start_byte();
         updated_code.push_str(&source_code[last_byte..child_start_byte]);
 
+        // println!("aaa: {}", child.kind());
+
         if child.kind() == "class_body" {
             process_class_body(source_code, &child, updated_code);
         } else {
@@ -191,13 +205,20 @@ fn process_functions(source_code: &str, node: &Node, updated_code: &mut String) 
     let indentation = get_indentation(source_code, node);
     let mut js_doc = JsDoc::new(&indentation);
 
-    js_doc.add_description(&get_function_name_from_node(source_code, node));
+    let info = get_function_details_from_node(source_code, node);
+    println!("info: {:?}", info);
+
+    js_doc.add_description(&info.function_name);
 
     if node.kind() == "export_statement" {
         let params = node.child(0).unwrap().next_named_sibling().unwrap();
         get_params(source_code, &params, &mut js_doc);
     } else {
         get_params(source_code, node, &mut js_doc);
+    }
+
+    if let Some(return_type) = info.return_type {
+        js_doc.add_return(&return_type, "");
     }
 
     updated_code.push_str(&format!("{}\n", js_doc.build())); // add in the JsDoc
@@ -207,208 +228,39 @@ fn process_functions(source_code: &str, node: &Node, updated_code: &mut String) 
     updated_code.push_str(&format!("{}{}", indentation, node));
 }
 
-fn get_function_name_from_node(source_code: &str, node: &Node) -> String {
+fn get_function_details_from_node(source_code: &str, node: &Node) -> FunctionInfo {
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
+        // println!("aa: {:?}", return_type);
         if child.kind() == "property_identifier" || child.kind() == "identifier" {
-            return child
+            let return_type = get_function_return_type_from_node(source_code, node);
+            let name = child
                 .utf8_text(source_code.as_bytes())
                 .unwrap()
                 .to_string()
                 .trim()
                 .to_string();
+            return FunctionInfo::new(name, return_type);
         } else if child.kind() == "function_declaration" {
+            let return_type = get_function_return_type_from_node(source_code, &child);
             let mut export_cursor = child.walk();
             for export_child in child.children(&mut export_cursor) {
                 if export_child.kind() == "identifier" {
-                    return export_child
+                    let name = export_child
                         .utf8_text(source_code.as_bytes())
                         .unwrap()
                         .trim()
                         .to_string();
+                    return FunctionInfo::new(name, return_type);
                 }
             }
         }
     }
-    "unknown".to_string()
+    FunctionInfo::new("unknown".to_owned(), None)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_basic() {
-        let source_code = r#"
-            function testNoExport(param1: string, param2?: boolean) {
-
-            }
-            
-            export function testExport(param1: string) {
-            
-            }
-        "#;
-
-        let expected_output = r#"
-            /**
-             * testNoExport
-             *
-             * @param {string} param1 - 
-             * @param {bool} [param2] - 
-             */
-            function testNoExport(param1: string, param2?: boolean) {
-
-            }
-            
-            /**
-             * testExport
-             *
-             * @param {string} param1 - 
-             */
-            export function testExport(param1: string) {
-            
-            }
-        "#;
-
-        let updated_code = process(source_code);
-        println!("{}", updated_code);
-        assert_eq!(updated_code, expected_output);
-    }
-
-    #[test]
-    fn test_exported() {
-        let source_code = r#"
-            export function testExport(param1: string) {
-            
-            }
-        "#;
-
-        let expected_output = r#"
-            /**
-             * testExport
-             *
-             * @param {string} param1 - 
-             */
-            export function testExport(param1: string) {
-            
-            }
-        "#;
-
-        let updated_code = process(source_code);
-        println!("{}", updated_code);
-        assert_eq!(updated_code, expected_output);
-    }
-
-    #[test]
-    fn test_defaults() {
-        let source_code = r#"
-            export function test(param1: string = "default value") {
-            
-            }
-        "#;
-
-        // TODO .. what should this actually look like according to jsdoc
-        let expected_output = r#"
-            /**
-             * test
-             *
-             * @param {string} param1="default value" - 
-             */
-            export function test(param1: string = "default value") {
-            
-            }
-        "#;
-
-        let updated_code = process(source_code);
-        println!("{}", updated_code);
-        assert_eq!(updated_code, expected_output);
-    }
-
-    // TODO .. WIP ... i think i need to move to a query to get this
-    // #[test]
-    // fn test_defaults_with_no_type() {
-    //     let source_code = r#"
-    //         export function test(param2 = true) {
-
-    //         }
-    //     "#;
-
-    //     // TODO .. what should this actually look like according to jsdoc
-    //     let expected_output = r#"
-    //         /**
-    //          * test
-    //          *
-    //          * @param {bool} param2 -
-    //          */
-    //         export function test(param2 = true) {
-
-    //         }
-    //     "#;
-
-    //     let updated_code = process(source_code);
-    //     println!("{}", updated_code);
-    //     assert_eq!(updated_code, expected_output);
-    // }
-
-    #[test]
-    fn test_class() {
-        let source_code = r#"
-            class A {
-                testNoExport(param1: string, param2?: bool) {
-                    // TODO
-                }
-
-                public aa() {
-                    // TODO
-                }
-
-                private b() {
-                    // TODO
-                }
-
-                static c() {
-                    // TODO
-                }
-            }
-        "#;
-
-        let expected_output = r#"
-            class A {
-                /**
-                 * testNoExport
-                 *
-                 * @param {string} param1 - 
-                 * @param {boolean} [param2] - 
-                 */
-                testNoExport(param1: string, param2?: boolean) {
-                    // TODO
-                }
-
-                /**
-                 * aa
-                 */
-                public aa() {
-                    // TODO
-                }
-
-                /**
-                 * b
-                 */
-                private b() {
-                    // TODO
-                }
-
-                /**
-                 * c
-                 */
-                static c() {
-                    // TODO
-                }
-            }
-        "#;
-
-        let updated_code = process(source_code);
-        println!("a {}", updated_code);
-        assert_eq!(updated_code, expected_output);
-    }
+fn get_function_return_type_from_node(source_code: &str, node: &Node) -> Option<String> {
+    let return_type = node.child_by_field_name("return_type");
+    println!("return t: {:?}", return_type);
+    return_type.map(|t| t.utf8_text(source_code.as_bytes()).unwrap().to_string())
 }
