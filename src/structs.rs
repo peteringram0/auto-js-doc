@@ -2,6 +2,7 @@
 pub struct JsDoc {
     indentation: String,
     formatted: String,
+    param_count: u8,
 }
 
 impl JsDoc {
@@ -9,6 +10,7 @@ impl JsDoc {
         JsDoc {
             indentation: indentation.to_owned(),
             formatted: "/**\n".to_string(),
+            param_count: 0,
         }
     }
 
@@ -38,6 +40,7 @@ impl JsDoc {
         default: Option<String>,
         description: &str,
     ) -> &mut JsDoc {
+        self.param_count += 1;
         let open_bracket = if optional { "[" } else { "" };
         let close_bracket = if optional { "]" } else { "" };
         let a = default
@@ -53,8 +56,11 @@ impl JsDoc {
 
     // Method to add a return type to the JsDoc
     pub fn add_return(&mut self, return_type: &str, description: &str) -> &mut JsDoc {
+        if self.param_count == 0 {
+            self.add_space();
+        }
         self.formatted.push_str(&format!(
-            "{} * @return {{{}}} {}\n",
+            "{} * @returns {{{}}} {}\n",
             self.indentation, return_type, description
         ));
         self
@@ -99,10 +105,10 @@ mod tests {
  * add description
  *
  * @param {string} foo - foo description
- * @param {unknown} baz -
+ * @param {unknown} baz - 
  * @param {string} [bar] - bar description
  * @param {string} [bar="default value"] - bar description
- * @return {string} return of something
+ * @returns {string} return of something
  */"#;
 
         // println!("a {}", builder);

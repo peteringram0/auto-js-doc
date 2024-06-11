@@ -262,5 +262,7 @@ fn get_function_details_from_node(source_code: &str, node: &Node) -> FunctionInf
 fn get_function_return_type_from_node(source_code: &str, node: &Node) -> Option<String> {
     let return_type = node.child_by_field_name("return_type");
     println!("return t: {:?}", return_type);
-    return_type.map(|t| t.utf8_text(source_code.as_bytes()).unwrap().to_string())
+    return_type
+        .map(|t| t.utf8_text(source_code.as_bytes()).unwrap().to_string())
+        .map(|s| s.trim_start_matches(':').trim().to_string())
 }

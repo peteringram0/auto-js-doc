@@ -36,7 +36,7 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 * [X] Parsing - Static function support
 * [X] Parsing - Should ignore constructor with `private a: string` as part of the arguments (need to check this)
 * [X] Parsing - Support union type
-* [ ] Parsing - Add in @returns
+* [X] Parsing - Add in @returns
 * [ ] Building - Export to WASM
 
 # Later

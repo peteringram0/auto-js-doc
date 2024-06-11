@@ -142,9 +142,6 @@ mod tests {
             export function test(): Promise<string> {
 
             }
-            function testTwo(): Promise<string> {
-
-            }
         "#;
 
         let expected_output = r#"
