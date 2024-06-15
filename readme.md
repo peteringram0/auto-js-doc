@@ -37,13 +37,11 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 * [X] Parsing - Should ignore constructor with `private a: string` as part of the arguments (need to check this)
 * [X] Parsing - Support union type
 * [X] Parsing - Add in @returns
-* [ ] Building - Export to WASM
-
-# Later
-* [ ] Parsing - Support parmas with inferred typing
-* [ ] Parsing - Support parmas with inferred typing - with default values provided
-* [ ] CLI - Run as CLI with flags to target a .ts file (or maybe a group of files?)
-
+* [ ] IO - setup stdin and stdout
+* [ ] Site - lock down orgian allowed to call my instance
+* [ ] Site - design to look better
+* [ ] Hosting - Check over all settings
+* [ ] Development - Nothing in place to make it easy to work on (testing out things on bun etc)
 
 # Build
 
@@ -51,7 +49,6 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 docker build -t auto-js .
 docker run --name auto-js -p 3000:3000 auto-js
 ```
-
 
 # Notes
 https://github.com/tree-sitter/tree-sitter/discussions/1550
