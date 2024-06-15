@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 mod e2e_test;
 mod structs;
 
@@ -21,12 +19,13 @@ impl FunctionInfo {
     }
 }
 
-fn main() {
-    // TODO
+pub fn main() {
+    println!("hello world");
+    // TODO: ideally take a string on stdin and output the formatted string on stdout (need to work out if im going to have formatting/whitespace issues on either)
 }
 
-// process
-fn process(source_code: &str) -> String {
+// #[wasm_bindgen]
+pub fn process(source_code: &str) -> String {
     let mut parser = Parser::new();
     parser
         .set_language(&language_typescript())

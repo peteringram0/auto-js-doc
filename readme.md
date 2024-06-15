@@ -43,3 +43,15 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 * [ ] Parsing - Support parmas with inferred typing
 * [ ] Parsing - Support parmas with inferred typing - with default values provided
 * [ ] CLI - Run as CLI with flags to target a .ts file (or maybe a group of files?)
+
+
+# Build
+
+```bash
+docker build -t auto-js .
+docker run --name auto-js -p 3000:3000 auto-js
+```
+
+
+# Notes
+https://github.com/tree-sitter/tree-sitter/discussions/1550

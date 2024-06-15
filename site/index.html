@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLI Web Interface</title>
+</head>
+<body>
+  <h1>Run CLI from Web</h1>
+  <button id="runCliButton">Auto Js Doc</button>
+  <pre id="output"></pre>
+
+  <script>
+    document.getElementById('runCliButton').addEventListener('click', () => {
+      fetch('/run-cli')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('output').textContent = data;
+        })
+        .catch(error => {
+          document.getElementById('output').textContent = `Error: ${error}`;
+        });
+    });
+  </script>
+</body>
+</html>
