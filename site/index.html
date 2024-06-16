@@ -8,11 +8,18 @@
 <body>
   <h1>Run CLI from Web</h1>
   <button id="runCliButton">Auto Js Doc</button>
+  <textarea id="text-area"></textarea>
   <pre id="output"></pre>
 
   <script>
     document.getElementById('runCliButton').addEventListener('click', () => {
-      fetch('/run-cli')
+      fetch('/run-cli', {
+        method: "POST",
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        body: document.getElementById('text-area').value
+      })
         .then(response => response.text())
         .then(data => {
           document.getElementById('output').textContent = data;

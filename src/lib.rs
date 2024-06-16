@@ -1,6 +1,7 @@
 mod e2e_test;
 mod structs;
 
+use std::io::{self, Read, Write};
 use structs::JsDoc;
 use tree_sitter::{Node, Parser};
 use tree_sitter_typescript::language_typescript;
@@ -20,11 +21,31 @@ impl FunctionInfo {
 }
 
 pub fn main() {
-    println!("hello world");
-    // TODO: ideally take a string on stdin and output the formatted string on stdout (need to work out if im going to have formatting/whitespace issues on either)
+    // Create a handle to stdin
+    let stdin = io::stdin();
+    let mut handle = stdin.lock();
+
+    // Create a string to hold the entire input
+    let mut input = String::new();
+
+    // Read the entire input into the string
+    let output = match handle.read_to_string(&mut input) {
+        Ok(_) => process(&input),
+        Err(_) => "".to_owned(),
+    };
+
+    // Create a handle to stdout
+    let stdout = io::stdout();
+    let mut handle_out = stdout.lock();
+
+    // Write the processed input to stdout
+    if let Err(e) = writeln!(handle_out, "{}", output) {
+        eprintln!("Error writing to stdout: {}", e);
+    }
+
+    io::stdout().flush().ok();
 }
 
-// #[wasm_bindgen]
 pub fn process(source_code: &str) -> String {
     let mut parser = Parser::new();
     parser
@@ -108,10 +129,10 @@ fn get_params(source_code: &str, child: &Node, js_doc: &mut JsDoc) {
                 }
             }
 
-            println!(
-                "name: {:?}, type: {:?}, default: {:?}",
-                param_name, param_type, param_default
-            );
+            // println!(
+            //     "name: {:?}, type: {:?}, default: {:?}",
+            //     param_name, param_type, param_default
+            // );
 
             if let (Some(param_name), param_type) = (param_name.as_ref(), param_type.clone()) {
                 js_doc.add_param(
@@ -205,7 +226,7 @@ fn process_functions(source_code: &str, node: &Node, updated_code: &mut String) 
     let mut js_doc = JsDoc::new(&indentation);
 
     let info = get_function_details_from_node(source_code, node);
-    println!("info: {:?}", info);
+    // println!("info: {:?}", info);
 
     js_doc.add_description(&info.function_name);
 
@@ -260,7 +281,7 @@ fn get_function_details_from_node(source_code: &str, node: &Node) -> FunctionInf
 
 fn get_function_return_type_from_node(source_code: &str, node: &Node) -> Option<String> {
     let return_type = node.child_by_field_name("return_type");
-    println!("return t: {:?}", return_type);
+    // println!("return t: {:?}", return_type);
     return_type
         .map(|t| t.utf8_text(source_code.as_bytes()).unwrap().to_string())
         .map(|s| s.trim_start_matches(':').trim().to_string())
