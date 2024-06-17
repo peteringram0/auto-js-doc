@@ -37,11 +37,13 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 * [X] Parsing - Should ignore constructor with `private a: string` as part of the arguments (need to check this)
 * [X] Parsing - Support union type
 * [X] Parsing - Add in @returns
-* [ ] IO - setup stdin and stdout
-* [ ] Site - lock down orgian allowed to call my instance
-* [ ] Site - design to look better
+* [X] IO - setup stdin and stdout
+* [X] Site - lock down orgian allowed to call my instance
+* [X] Site - design to look better
 * [ ] Hosting - Check over all settings
-* [ ] Development - Nothing in place to make it easy to work on (testing out things on bun etc)
+* [ ] Support existing code comments (use as the description)
+* [ ] Dont add docblocks for functions that already have one
+* [ ] Github CI to build releases
 
 # Build
 

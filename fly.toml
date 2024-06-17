@@ -1,8 +1,3 @@
-# fly.toml app configuration file generated for auto-js-doc on 2024-06-15T20:32:27+01:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
 app = 'auto-js-doc'
 primary_region = 'lhr'
 
