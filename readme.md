@@ -1,7 +1,5 @@
 # Auto JSDoc
 
-## This project is WIP. DO NOT USE!!
-
 #
 
 This project aims to add [JsDoc](https://jsdoc.app/) blocks to functions and eventually update old blocks.
@@ -28,7 +26,7 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 }
 ```
 
-# TODO
+# Roadmap
 * [X] Parsing - Support classes
 * [X] Parsing - Support optional defaults
 * [X] Parsing - private functions
@@ -39,8 +37,8 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 * [X] Parsing - Add in @returns
 * [X] IO - setup stdin and stdout
 * [X] Site - lock down orgian allowed to call my instance
-* [X] Site - design to look better
-* [ ] Hosting - Check over all settings
+* [X] Site - Example site
+* [X] Hosting - Check over all settings
 * [ ] Support existing code comments (use as the description)
 * [ ] Dont add docblocks for functions that already have one
 * [ ] Github CI to build releases
