@@ -42,6 +42,7 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 * [ ] Support existing code comments (use as the description)
 * [ ] Dont add docblocks for functions that already have one
 * [ ] Github CI to build releases
+* [ ] Site - debounce requests
 
 # Build
 
