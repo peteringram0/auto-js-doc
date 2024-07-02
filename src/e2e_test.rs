@@ -292,5 +292,31 @@ mod tests {
         assert_eq!(updated_code, expected_output);
     }
 
+    #[test]
+    fn test_support_existing_doc_block_no_class() {
+        let source_code = r#"
+        /**
+         * my outdated doc block
+         */
+        function a() {
+            // TODO
+        }
+        "#;
+
+        let expected_output = r#"
+        /**
+         * my outdated doc block
+         */
+        function a() {
+            // TODO
+        }
+        "#;
+
+        let updated_code = process(source_code);
+        println!("a {}", updated_code);
+        assert_eq!(updated_code, expected_output);
+    }
+
     // TODO: source_code with a outdated doc block should be updated to new but retain current comment
+    // Issue with this at the moment the @'s are part of the comment
 }

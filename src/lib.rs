@@ -346,7 +346,8 @@ fn get_function_return_type_from_node(source_code: &str, node: &Node) -> Option<
 /// Remove comment indication characters from the string
 fn parse_comment(comment: &str) -> String {
     comment
-        .replace("//", "")
+        .replace("/", "")
+        .replace("*", "")
         .replace("/n", "")
         .trim()
         .to_owned()
