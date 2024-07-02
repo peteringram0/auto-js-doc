@@ -236,4 +236,61 @@ mod tests {
         println!("a {}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
+
+    #[test]
+    fn test_support_existing_comments_within_class() {
+        let source_code = r#"
+            class A {
+                
+                // my class does something fun.
+                public aa(param: string): string {
+                    // TODO
+                }
+            }
+        "#;
+
+        let expected_output = r#"
+            class A {
+
+                /**
+                 * my class does something fun.
+                 *
+                 * @param {string} param - 
+                 * @returns {string} 
+                 */
+                public aa(param: string): string {
+                    // TODO
+                }
+            }
+        "#;
+
+        let updated_code = process(source_code);
+        println!("a {}", updated_code);
+        assert_eq!(updated_code, expected_output);
+    }
+
+    #[test]
+    fn test_support_existing_comments_no_class() {
+        let source_code = r#"
+        // my comment a
+        function a() {
+            // TODO
+        }
+        "#;
+
+        let expected_output = r#"
+        /**
+         * my comment a
+         */
+        function a() {
+            // TODO
+        }
+        "#;
+
+        let updated_code = process(source_code);
+        println!("a {}", updated_code);
+        assert_eq!(updated_code, expected_output);
+    }
+
+    // TODO: source_code with a outdated doc block should be updated to new but retain current comment
 }

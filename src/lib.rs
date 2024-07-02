@@ -152,19 +152,30 @@ fn walk(node: &Node, source_code: &str) -> String {
     let mut updated_code = String::new();
     let mut last_byte = 0;
 
+    let mut comment: Option<String> = None;
+
     for child in node.children(&mut cursor) {
         let child_start_byte = child.start_byte();
         let child_end_byte = child.end_byte();
 
         // Append the text from the end of the last child to the start of the current child
-        updated_code.push_str(&source_code[last_byte..child_start_byte]);
+        // updated_code.push_str(&source_code[last_byte..child_start_byte]);
+        // Get the text between the last child and the current child
+        let text_between = &source_code[last_byte..child_start_byte];
 
-        if child.kind() == "export_statement" || child.kind() == "function_declaration" {
-            process_functions(source_code, &child, &mut updated_code);
-        } else if child.kind() == "class_declaration" {
-            process_class_declaration(source_code, &child, &mut updated_code);
+        if child.kind() == "comment" {
+            comment = Some(parse_comment(
+                child.utf8_text(source_code.as_bytes()).unwrap(),
+            ));
         } else {
-            updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
+            updated_code.push_str(text_between);
+            if child.kind() == "export_statement" || child.kind() == "function_declaration" {
+                process_functions(source_code, &child, &mut updated_code, &comment);
+            } else if child.kind() == "class_declaration" {
+                process_class_declaration(source_code, &child, &mut updated_code);
+            } else {
+                updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
+            }
         }
 
         // Update last_byte to the end of the current child
@@ -186,8 +197,6 @@ fn process_class_declaration(source_code: &str, node: &Node, updated_code: &mut 
         let child_start_byte = child.start_byte();
         updated_code.push_str(&source_code[last_byte..child_start_byte]);
 
-        // println!("aaa: {}", child.kind());
-
         if child.kind() == "class_body" {
             process_class_body(source_code, &child, updated_code);
         } else {
@@ -204,16 +213,48 @@ fn process_class_body(source_code: &str, node: &Node, updated_code: &mut String)
     let start_byte = node.start_byte();
     let mut last_byte = start_byte;
 
+    let mut comment: Option<String> = None;
+
     for child in node.children(&mut body_cursor) {
         let child_start_byte = child.start_byte();
-        updated_code.push_str(&source_code[last_byte..child_start_byte]);
 
-        if child.kind() == "method_definition" {
-            process_functions(source_code, &child, updated_code);
-        } else if child.kind() == "class_declaration" {
-            process_class_declaration(source_code, &child, updated_code);
+        // println!(
+        //     "child: {} line: ${:?}",
+        //     child.kind(),
+        //     child.utf8_text(source_code.as_bytes())
+        // );
+
+        // Get the text between the last child and the current child
+        let text_between = &source_code[last_byte..child_start_byte];
+
+        if child.kind() == "comment" {
+            // Skip the comment but handle surrounding whitespace
+            // if let Some(last_newline) = text_between.rfind('\n') {
+            //     updated_code.push_str(&text_between[..=last_newline]);
+            // }
+            updated_code.push('\n');
+
+            // comment = Some("my comment".to_owned());
+            // comment = Some(child.utf8_text(source_code.as_bytes()).unwrap().to_owned());
+            comment = Some(parse_comment(
+                child.utf8_text(source_code.as_bytes()).unwrap(),
+            ));
+
+            // println!("text_between: {:?}", &text_between);
+            last_byte = child.end_byte();
+            continue;
         } else {
-            updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
+            updated_code.push_str(text_between);
+
+            // println!("class body kind: ${:?}", child.kind());
+
+            if child.kind() == "method_definition" {
+                process_functions(source_code, &child, updated_code, &comment);
+            } else if child.kind() == "class_declaration" {
+                process_class_declaration(source_code, &child, updated_code);
+            } else {
+                updated_code.push_str(child.utf8_text(source_code.as_bytes()).unwrap());
+            }
         }
 
         last_byte = child.end_byte();
@@ -221,14 +262,29 @@ fn process_class_body(source_code: &str, node: &Node, updated_code: &mut String)
     updated_code.push_str(&source_code[last_byte..node.end_byte()]);
 }
 
-fn process_functions(source_code: &str, node: &Node, updated_code: &mut String) {
+fn process_functions(
+    source_code: &str,
+    node: &Node,
+    updated_code: &mut String,
+    comment: &Option<String>,
+) {
     let indentation = get_indentation(source_code, node);
     let mut js_doc = JsDoc::new(&indentation);
 
     let info = get_function_details_from_node(source_code, node);
     // println!("info: {:?}", info);
 
-    js_doc.add_description(&info.function_name);
+    match comment {
+        Some(comment) => {
+            // let comment = child.utf8_text(source_code.as_bytes())
+            js_doc.add_description(comment);
+        }
+        None => {
+            js_doc.add_description(&info.function_name);
+        }
+    }
+
+    // println!("comment ... within function: {:?}", comment);
 
     if node.kind() == "export_statement" {
         let params = node.child(0).unwrap().next_named_sibling().unwrap();
@@ -285,4 +341,13 @@ fn get_function_return_type_from_node(source_code: &str, node: &Node) -> Option<
     return_type
         .map(|t| t.utf8_text(source_code.as_bytes()).unwrap().to_string())
         .map(|s| s.trim_start_matches(':').trim().to_string())
+}
+
+/// Remove comment indication characters from the string
+fn parse_comment(comment: &str) -> String {
+    comment
+        .replace("//", "")
+        .replace("/n", "")
+        .trim()
+        .to_owned()
 }
