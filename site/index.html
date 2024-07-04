@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -8,7 +7,6 @@
       name="description"
       content="Auto JS doc - Automatically generate Js Doc comments based on typescript definitions."
     />
-    
     <title>Auto Js Doc</title>
     <style>
       @media (max-width: 480px) {
@@ -85,11 +83,23 @@ export function testFunction(param1: string) {
       return await req.text()
     }
 
+    function debounce(func, wait) {
+      let timer
+      return function() {
+        const context = this
+        const args = arguments
+        window.clearTimeout(timer)
+        timer = window.setTimeout(() => {
+          func.apply(context, args)
+        }, wait)
+      }
+    }
+
     document
       .getElementById('stdin')
-      .addEventListener("input", async () => {
+      .addEventListener("input", debounce(async () => {
         stdout.textContent = await query(stdin.value)
-      })
+      }, 300))
   </script>
   
 </html>
