@@ -164,6 +164,7 @@ fn walk(node: &Node, source_code: &str) -> String {
         let text_between = &source_code[last_byte..child_start_byte];
 
         if child.kind() == "comment" {
+            // updated_code.push('\n');
             comment = Some(parse_comment(
                 child.utf8_text(source_code.as_bytes()).unwrap(),
             ));
@@ -346,9 +347,16 @@ fn get_function_return_type_from_node(source_code: &str, node: &Node) -> Option<
 /// Remove comment indication characters from the string
 fn parse_comment(comment: &str) -> String {
     comment
+        .replace("/n", "")
         .replace("/", "")
         .replace("*", "")
-        .replace("/n", "")
-        .trim()
-        .to_owned()
+        .lines()
+        .map(|line| line.trim())
+        .filter(|line| {
+            println!("line: {:?}", line);
+            line != &"" && !line.starts_with("@")
+        })
+        .map(|line| line.to_owned())
+        .collect::<Vec<String>>()
+        .join("")
 }

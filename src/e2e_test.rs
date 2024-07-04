@@ -233,7 +233,7 @@ mod tests {
         "#;
 
         let updated_code = process(source_code);
-        println!("a {}", updated_code);
+        println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 
@@ -265,7 +265,7 @@ mod tests {
         "#;
 
         let updated_code = process(source_code);
-        println!("a {}", updated_code);
+        println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 
@@ -288,7 +288,7 @@ mod tests {
         "#;
 
         let updated_code = process(source_code);
-        println!("a {}", updated_code);
+        println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 
@@ -313,10 +313,38 @@ mod tests {
         "#;
 
         let updated_code = process(source_code);
-        println!("a {}", updated_code);
+        println!("{}", updated_code);
         assert_eq!(updated_code, expected_output);
     }
 
-    // TODO: source_code with a outdated doc block should be updated to new but retain current comment
-    // Issue with this at the moment the @'s are part of the comment
+    #[test]
+    fn test_support_existing_doc_block_outdated() {
+        let source_code = r#"
+        /**
+         * my outdated doc block
+         * 
+         * @param old {string}
+         */
+        function a(new: string) {
+            // TODO
+        }
+        "#;
+
+        let expected_output = r#"
+        /**
+         * my outdated doc block
+         *
+         * @param {string} new - 
+         */
+        function a(new: string) {
+            // TODO
+        }
+        "#;
+
+        let updated_code = process(source_code);
+        println!("{}", updated_code);
+        assert_eq!(updated_code, expected_output);
+    }
+
+    // TODO there are some issues with honoring the whitespace between comments within and out of classes
 }

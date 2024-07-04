@@ -3,6 +3,7 @@
 #
 
 This project aims to add [JsDoc](https://jsdoc.app/) blocks to functions and eventually update old blocks.
+[Test it out at](https://auto-js-doc.fly.dev/).
 
 Input:
 ```ts
@@ -39,10 +40,9 @@ function myFunction(param1: string, param2?: boolean, param3 = "default value"):
 * [X] Site - lock down orgian allowed to call my instance
 * [X] Site - Example site
 * [X] Hosting - Check over all settings
-* [ ] Support existing code comments (use as the description)
-* [ ] Dont add docblocks for functions that already have one
+* [X] Support existing code comments (use as the description)
 * [ ] Github CI to build releases
-* [ ] Site - debounce requests
+* [X] Site - debounce requests
 
 # Build
 
