@@ -353,7 +353,7 @@ fn parse_comment(comment: &str) -> String {
         .lines()
         .map(|line| line.trim())
         .filter(|line| {
-            println!("line: {:?}", line);
+            // println!("line: {:?}", line);
             line != &"" && !line.starts_with("@")
         })
         .map(|line| line.to_owned())
